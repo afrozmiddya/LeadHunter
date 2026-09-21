@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Phone, MessageCircle, MapPin, Globe, Star, ArrowRight } from 'lucide-react';
+import { Phone, MessageCircle, MapPin, Globe, Star, ArrowRight, CheckCircle } from 'lucide-react';
 
 export default function LeadCard({ lead }: { lead: any }) {
   const name = lead.displayName?.text || 'Unknown Business';
@@ -60,8 +60,20 @@ export default function LeadCard({ lead }: { lead: any }) {
           </p>
         </div>
         
-        <div className={`px-3 py-1 rounded-full text-xs font-bold border ${getPriorityColor()}`}>
-          {lead.leadPriority} PRIORITY
+        <div className="flex flex-col items-end gap-2">
+          <div className={`px-3 py-1 rounded-full text-xs font-bold border ${getPriorityColor()}`}>
+            {lead.leadPriority || lead.lead_priority || 'UNKNOWN'} PRIORITY
+          </div>
+          {(lead.saved_at || lead.outreachStatus || lead.outreach_status) && (
+            <div className="flex flex-col items-end gap-1">
+              <span className="flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-md border border-green-200">
+                <CheckCircle className="h-3 w-3" /> Saved
+              </span>
+              <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md border border-gray-200">
+                {lead.outreachStatus || lead.outreach_status || 'Not Contacted'}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
