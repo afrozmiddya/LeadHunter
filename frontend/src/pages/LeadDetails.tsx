@@ -1,5 +1,5 @@
 import { useLocation, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Phone, MessageCircle, MapPin, Star, Copy, CheckCircle, Sparkles, RefreshCw, Edit2, Save, X } from 'lucide-react';
+import { ArrowLeft, Phone, MessageCircle, MapPin, Star, Copy, CheckCircle, Sparkles, RefreshCw, Edit2, Save, X, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
 import { api } from '../lib/api';
 
@@ -20,18 +20,52 @@ export default function LeadDetails() {
   const [isEditingMessage, setIsEditingMessage] = useState(false);
   const [editMessageContent, setEditMessageContent] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [selectedTone, setSelectedTone] = useState('Friendly + Professional');
 
-  // We should update the local lead object if we successfully save
-  const updateSavedLead = async (updatedFields: any) => {
+  // Explicit Save Lead State
+  const isInitiallySaved = !!lead?.saved_at || !!lead?.business_id;
+  const [isSaved, setIsSaved] = useState(isInitiallySaved);
+  const [outreachStatus, setOutreachStatus] = useState<string>(lead?.outreachStatus || lead?.outreach_status || 'Not Contacted');
+  const [showContactPrompt, setShowContactPrompt] = useState<'whatsapp' | 'call' | null>(null);
+
+  // We should update the local lead object, but ONLY persist to backend if explicitly saved
+  const updateSavedLead = async (updatedFields: any, forceSave = false) => {
+      const updatedLead = { ...lead, ...updatedFields };
+      setLead(updatedLead);
+      
+      if (updatedFields.outreachStatus) {
+         setOutreachStatus(updatedFields.outreachStatus);
+      }
+      
+      if (!isSaved && !forceSave) return;
+
       try {
-          setIsSaving(true);
-          const updatedLead = { ...lead, ...updatedFields };
           const response = await api.put(`/leads/${lead.id || 'temp'}/outreach-message`, { lead: updatedLead });
           if (response.data && response.data.saved) {
               setLead(response.data.saved);
           }
       } catch(e) {
-          console.error("Failed to save updated lead", e);
+          console.error("Failed to update saved lead", e);
+      }
+  };
+
+  const handleSaveLead = async () => {
+      try {
+          setIsSaving(true);
+          const currentLeadData = {
+              ...lead,
+              businessAnalysis,
+              whatsappMessage,
+              outreachStatus
+          };
+          const response = await api.post(`/leads/${lead.id || 'temp'}/save`, currentLeadData);
+          if (response.data && response.data.saved) {
+              setLead(response.data.saved);
+              setIsSaved(true);
+          }
+      } catch(e) {
+          console.error("Failed to save lead", e);
+          setErrorMsg("Failed to save lead.");
       } finally {
           setIsSaving(false);
       }
@@ -54,8 +88,7 @@ export default function LeadDetails() {
   const address = lead.formattedAddress || lead.address || 'N/A';
   const websiteStatus = lead.websiteVerification?.status || lead.websiteStatus || lead.website_status;
 
-  const handleWhatsApp = () => {
-    if (phone) {
+  const executeWhatsApp = async (forceSave = false) => {
       let cleanPhone = phone.replace(/[^0-9]/g, '');
       if (cleanPhone.startsWith('0')) cleanPhone = cleanPhone.substring(1);
       if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
@@ -63,11 +96,42 @@ export default function LeadDetails() {
       if (whatsappMessage) {
         const encodedMessage = encodeURIComponent(whatsappMessage);
         window.open(`https://wa.me/${cleanPhone}?text=${encodedMessage}`, '_blank');
-        updateSavedLead({ outreachStatus: 'Ready to Send' });
       } else {
         window.open(`https://wa.me/${cleanPhone}`, '_blank');
       }
-    }
+      
+      setShowContactPrompt(null);
+      await updateSavedLead({ outreachStatus: 'WhatsApp Opened' }, forceSave);
+  };
+
+  const handleWhatsAppClick = () => {
+      if (!phone) return;
+      if (!isSaved) {
+          setShowContactPrompt('whatsapp');
+      } else {
+          executeWhatsApp();
+      }
+  };
+
+  const executeCall = async (forceSave = false) => {
+      window.open(`tel:${phone.replace(/[^0-9+]/g, '')}`, '_self');
+      setShowContactPrompt(null);
+      await updateSavedLead({ outreachStatus: 'Called' }, forceSave);
+  };
+
+  const handleCallClick = () => {
+      if (!phone) return;
+      if (!isSaved) {
+          setShowContactPrompt('call');
+      } else {
+          executeCall();
+      }
+  };
+  
+  const handleConfirmPrompt = async () => {
+      await handleSaveLead();
+      if (showContactPrompt === 'whatsapp') executeWhatsApp(true);
+      if (showContactPrompt === 'call') executeCall(true);
   };
 
   const handleCopyOutreach = () => {
@@ -84,7 +148,6 @@ export default function LeadDetails() {
       const data = response.data;
       setBusinessAnalysis(data.analysis);
       
-      // Update backend record
       await updateSavedLead({ 
         businessAnalysis: data.analysis,
         opportunities: data.analysis.opportunities,
@@ -98,16 +161,15 @@ export default function LeadDetails() {
     }
   };
 
-  const generateMessage = async (tone = 'Friendly + Professional') => {
+  const generateMessage = async () => {
     if (!businessAnalysis) return;
     try {
       setIsGenerating(true);
       setErrorMsg('');
-        const response = await api.post(`/leads/${lead.id || 'temp'}/whatsapp`, { lead, businessAnalysis, tone });
+      const response = await api.post(`/leads/${lead.id || 'temp'}/whatsapp`, { lead, businessAnalysis, tone: selectedTone });
       const data = response.data;
       setWhatsappMessage(data.message);
       
-      // Update backend record
       await updateSavedLead({ 
         whatsappMessage: data.message,
         messageGeneratedAt: new Date().toISOString(),
@@ -132,7 +194,28 @@ export default function LeadDetails() {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto pb-12">
+    <div className="space-y-6 max-w-4xl mx-auto pb-12 relative">
+      
+      {showContactPrompt && (
+         <div className="fixed inset-0 bg-gray-900/50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-xl shadow-xl max-w-md w-full border border-gray-100">
+               <h3 className="text-lg font-bold text-gray-900 mb-2">Save this lead before contacting?</h3>
+               <p className="text-gray-600 text-sm mb-6">
+                  It's recommended to save the lead first so you don't lose the business context and AI analysis after following up.
+               </p>
+               <div className="flex justify-end gap-3">
+                  <button onClick={() => setShowContactPrompt(null)} className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg">
+                     Cancel
+                  </button>
+                  <button onClick={handleConfirmPrompt} disabled={isSaving} className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 rounded-lg flex items-center gap-2">
+                     {isSaving ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                     Save & Continue
+                  </button>
+               </div>
+            </div>
+         </div>
+      )}
+
       <Link to="/search" className="text-sm font-medium text-gray-500 flex items-center gap-2 hover:text-gray-900 w-fit">
         <ArrowLeft className="h-4 w-4" /> Back to Leads
       </Link>
@@ -151,12 +234,51 @@ export default function LeadDetails() {
             <div className="flex items-center gap-4 mt-3 text-sm text-gray-700">
               <span className="flex items-center gap-1"><Star className="h-5 w-5 text-yellow-400 fill-current" /> <span className="font-bold text-lg">{rating}</span> ({reviews} Reviews)</span>
             </div>
+            
+            {isSaved && (
+               <div className="flex items-center gap-2 mt-4">
+                  <span className="text-sm font-medium text-gray-700">Outreach Status:</span>
+                  <select 
+                     value={outreachStatus}
+                     onChange={(e) => {
+                        const newStatus = e.target.value;
+                        setOutreachStatus(newStatus);
+                        updateSavedLead({ outreachStatus: newStatus });
+                     }}
+                     className="text-sm border border-gray-300 rounded-md p-1 focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                     <option value="Not Contacted">Not Contacted</option>
+                     <option value="Saved">Saved</option>
+                     <option value="WhatsApp Opened">WhatsApp Opened</option>
+                     <option value="Called">Called</option>
+                     <option value="Contacted">Contacted</option>
+                     <option value="Follow-up Required">Follow-up Required</option>
+                     <option value="Responded">Responded</option>
+                     <option value="Not Interested">Not Interested</option>
+                     <option value="Converted">Converted</option>
+                  </select>
+               </div>
+            )}
           </div>
-          <div className="text-right">
-            <span className="inline-block bg-indigo-50 text-indigo-700 px-4 py-1.5 rounded-full text-sm font-bold border border-indigo-100">
-              {businessAnalysis?.priority || lead.leadPriority || lead.lead_priority || 'N/A'} PRIORITY
-            </span>
-            <p className="text-sm text-gray-500 mt-2 font-medium">Score: {businessAnalysis?.leadScore || lead.leadScore || lead.lead_score || 'N/A'}/100</p>
+          <div className="flex flex-col items-end gap-3">
+             <button 
+                onClick={handleSaveLead}
+                disabled={isSaved || isSaving}
+                className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors border ${
+                   isSaved ? 'bg-green-50 text-green-700 border-green-200 cursor-default' : 'bg-indigo-600 text-white border-transparent hover:bg-indigo-700 shadow-sm'
+                }`}
+             >
+                {isSaving ? <RefreshCw className="h-4 w-4 animate-spin" /> : 
+                 isSaved ? <CheckCircle className="h-4 w-4" /> : <Save className="h-4 w-4" />}
+                {isSaving ? 'Saving...' : isSaved ? 'Saved' : 'Save Lead'}
+             </button>
+             
+            <div className="text-right">
+              <span className="inline-block bg-indigo-50 text-indigo-700 px-4 py-1 rounded-full text-xs font-bold border border-indigo-100">
+                {businessAnalysis?.priority || lead.leadPriority || lead.lead_priority || 'N/A'} PRIORITY
+              </span>
+              <p className="text-xs text-gray-500 mt-1 font-medium">Score: {businessAnalysis?.leadScore || lead.leadScore || lead.lead_score || 'N/A'}/100</p>
+            </div>
           </div>
         </div>
 
@@ -211,6 +333,29 @@ export default function LeadDetails() {
             <div className="space-y-8">
               {/* Business Analysis Grid */}
               <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 space-y-6">
+                
+                {businessAnalysis.primaryScenario && (
+                  <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-100 mb-4">
+                     <h3 className="text-sm font-bold text-indigo-900 mb-1 flex items-center gap-2">
+                        <Sparkles className="h-4 w-4" /> Primary Scenario: {businessAnalysis.primaryScenario.type?.replace(/_/g, ' ')}
+                     </h3>
+                     <p className="text-indigo-800 text-sm mb-2">{businessAnalysis.primaryScenario.reason}</p>
+                     
+                     {businessAnalysis.evidence?.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-indigo-200">
+                           <h4 className="text-xs font-bold text-indigo-700 uppercase tracking-wider mb-2">Verified Evidence</h4>
+                           <ul className="space-y-1">
+                              {businessAnalysis.evidence.map((ev: string, i: number) => (
+                                 <li key={i} className="text-xs text-indigo-800 flex items-start gap-1.5">
+                                    <CheckCircle className="h-3 w-3 mt-0.5 flex-shrink-0" /> {ev}
+                                 </li>
+                              ))}
+                           </ul>
+                        </div>
+                     )}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <h3 className="text-sm font-bold text-gray-900 mb-2">Business Summary</h3>
@@ -219,8 +364,9 @@ export default function LeadDetails() {
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-gray-900 mb-2">Digital Presence</h3>
-                    <p className="text-gray-700 text-sm mb-1"><strong>Website:</strong> {businessAnalysis.websiteAssessment || (businessAnalysis.onlinePresence?.website ? 'Yes' : 'No')}</p>
-                    <p className="text-gray-700 text-sm mb-1"><strong>Social:</strong> {businessAnalysis.socialMediaAssessment || (businessAnalysis.onlinePresence?.socialMedia ? 'Yes' : 'No')}</p>
+                    <p className="text-gray-700 text-sm mb-1"><strong>Website:</strong> {businessAnalysis.onlinePresence?.website?.status || (businessAnalysis.onlinePresence?.website ? 'Yes' : 'No')}</p>
+                    <p className="text-gray-700 text-sm mb-1"><strong>Social:</strong> {businessAnalysis.onlinePresence?.socialMedia?.status || (businessAnalysis.onlinePresence?.socialMedia ? 'Yes' : 'No')}</p>
+                    <p className="text-gray-700 text-sm"><strong>Google:</strong> {businessAnalysis.onlinePresence?.googlePresence?.status || 'UNKNOWN'}</p>
                   </div>
                 </div>
 
@@ -230,15 +376,15 @@ export default function LeadDetails() {
                      <ul className="space-y-1">
                         {(businessAnalysis.digitalWeaknesses || businessAnalysis.opportunities || [])?.map((opt: string, i: number) => (
                            <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                              <CheckCircle className="h-4 w-4 text-orange-500 mt-0.5 flex-shrink-0" /> {opt}
+                              <AlertCircle className="h-4 w-4 text-orange-500 mt-0.5 flex-shrink-0" /> {opt}
                            </li>
                         ))}
                      </ul>
                    </div>
                    <div>
-                     <h3 className="text-sm font-bold text-gray-900 mb-2">Growth Opportunities</h3>
+                     <h3 className="text-sm font-bold text-gray-900 mb-2">Recommended Services</h3>
                      <ul className="space-y-1">
-                        {(businessAnalysis.growthOpportunities || businessAnalysis.recommendedServices || [])?.map((srv: string, i: number) => (
+                        {(businessAnalysis.recommendedServices || businessAnalysis.growthOpportunities || [])?.map((srv: string, i: number) => (
                            <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
                               <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" /> {srv}
                            </li>
@@ -247,26 +393,48 @@ export default function LeadDetails() {
                    </div>
                 </div>
                 
-                <div className="pt-4 border-t border-gray-200">
-                   <h3 className="text-sm font-bold text-gray-900 mb-2">Outreach Strategy</h3>
-                   <p className="text-gray-700 text-sm">{businessAnalysis.outreachStrategy || 'Not generated'}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-200">
+                   <div>
+                      <h3 className="text-sm font-bold text-gray-900 mb-2">Outreach Strategy</h3>
+                      <p className="text-gray-700 text-sm">{businessAnalysis.outreachStrategy || 'Not generated'}</p>
+                   </div>
+                   <div>
+                      <h3 className="text-sm font-bold text-gray-900 mb-2">CTA Strategy</h3>
+                      <p className="text-gray-700 text-sm">{businessAnalysis.ctaStrategy || 'Not generated'}</p>
+                   </div>
                 </div>
               </div>
 
               {/* WhatsApp Message Section */}
               <div>
-                 <div className="flex justify-between items-center mb-4">
+                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
                     <h3 className="text-lg font-bold text-gray-900">Personalised WhatsApp Message</h3>
-                    {!whatsappMessage && (
-                       <button 
-                          onClick={() => generateMessage()} 
+                    
+                    <div className="flex items-center gap-3">
+                       <select 
+                          value={selectedTone} 
+                          onChange={(e) => setSelectedTone(e.target.value)}
+                          className="border border-gray-300 rounded-md text-sm p-1.5 focus:ring-indigo-500 focus:border-indigo-500"
                           disabled={isGenerating}
-                          className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
-                        >
-                          {isGenerating ? <RefreshCw className="h-4 w-4 animate-spin" /> : <MessageCircle className="h-4 w-4" />}
-                          {isGenerating ? 'Generating...' : 'Generate Message'}
-                        </button>
-                    )}
+                       >
+                          <option value="Friendly + Professional">Friendly + Professional</option>
+                          <option value="Direct + Professional">Direct + Professional</option>
+                          <option value="Casual">Casual</option>
+                          <option value="Consultative">Consultative</option>
+                          <option value="Premium">Premium</option>
+                       </select>
+
+                       {!whatsappMessage && (
+                          <button 
+                             onClick={() => generateMessage()} 
+                             disabled={isGenerating}
+                             className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
+                           >
+                             {isGenerating ? <RefreshCw className="h-4 w-4 animate-spin" /> : <MessageCircle className="h-4 w-4" />}
+                             {isGenerating ? 'Generating...' : 'Generate Message'}
+                           </button>
+                       )}
+                    </div>
                  </div>
 
                  {whatsappMessage && (
@@ -317,11 +485,17 @@ export default function LeadDetails() {
         </div>
 
         <div className="pt-8 flex flex-wrap items-center gap-4">
-          <button onClick={handleWhatsApp} disabled={!phone} className="flex-1 flex justify-center items-center gap-2 px-6 py-4 bg-[#25D366] text-white rounded-xl font-bold hover:bg-[#128C7E] transition-colors disabled:opacity-50 shadow-sm shadow-[#25D366]/20">
+          {!isSaved && (
+             <button onClick={handleSaveLead} disabled={isSaving} className="flex-1 flex justify-center items-center gap-2 px-6 py-4 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-colors disabled:opacity-50 shadow-sm shadow-indigo-600/20">
+               {isSaving ? <RefreshCw className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />} Save Lead
+             </button>
+          )}
+
+          <button onClick={handleWhatsAppClick} disabled={!phone} className="flex-1 flex justify-center items-center gap-2 px-6 py-4 bg-[#25D366] text-white rounded-xl font-bold hover:bg-[#128C7E] transition-colors disabled:opacity-50 shadow-sm shadow-[#25D366]/20">
             <MessageCircle className="h-5 w-5" /> Open in WhatsApp
           </button>
           
-          <button onClick={() => { if(phone) window.open(`tel:${phone.replace(/[^0-9+]/g, '')}`, '_self'); }} disabled={!phone} className="flex-1 flex justify-center items-center gap-2 px-6 py-4 bg-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-colors disabled:opacity-50">
+          <button onClick={handleCallClick} disabled={!phone} className="flex-1 flex justify-center items-center gap-2 px-6 py-4 bg-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-colors disabled:opacity-50">
             <Phone className="h-5 w-5" /> Call Business
           </button>
 

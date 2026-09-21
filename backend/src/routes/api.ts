@@ -149,11 +149,10 @@ router.post('/leads/:id/analyze', async (req, res) => {
 
 router.post('/leads/:id/whatsapp', async (req, res) => {
     try {
-        const { lead, businessAnalysis } = req.body;
+        const { lead, businessAnalysis, tone } = req.body;
         if (!lead || !businessAnalysis) return res.status(400).json({ error: 'Lead data and businessAnalysis required' });
         
-        const result = await generateWhatsAppMessage(lead, businessAnalysis);
-        // generateWhatsAppMessage already returns { message: "..." }
+        const result = await generateWhatsAppMessage(lead, businessAnalysis, tone);
         res.json(result);
     } catch (error: any) {
         const status = error.status || 500;

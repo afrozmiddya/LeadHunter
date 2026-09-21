@@ -21,27 +21,27 @@ export async function saveLead(leadData: any) {
     const { data: business, error: bizError } = await supabase
         .from('businesses')
         .upsert({
-            place_id: leadData.id,
-            name: leadData.displayName?.text,
-            category: leadData.primaryType,
+            place_id: leadData.id || leadData.place_id || 'unknown',
+            name: leadData.displayName?.text || leadData.name,
+            category: leadData.primaryType || leadData.category,
             rating: leadData.rating,
-            review_count: leadData.userRatingCount,
-            phone: leadData.nationalPhoneNumber,
-            website_url: leadData.websiteUri,
-            website_status: leadData.websiteStatus,
-            address: leadData.formattedAddress,
-            google_maps_url: leadData.googleMapsUri,
-            lead_score: leadData.leadScore,
-            lead_priority: leadData.leadPriority,
-            lead_reason: leadData.leadReason,
-            website_features: leadData.websiteFeatures,
-            business_analysis: leadData.businessAnalysis,
+            review_count: leadData.userRatingCount || leadData.review_count,
+            phone: leadData.nationalPhoneNumber || leadData.phone,
+            website_url: leadData.websiteUri || leadData.website_url,
+            website_status: leadData.websiteStatus || leadData.website_status,
+            address: leadData.formattedAddress || leadData.address,
+            google_maps_url: leadData.googleMapsUri || leadData.google_maps_url,
+            lead_score: leadData.leadScore || leadData.lead_score,
+            lead_priority: leadData.leadPriority || leadData.lead_priority,
+            lead_reason: leadData.leadReason || leadData.lead_reason,
+            website_features: leadData.websiteFeatures || leadData.website_features,
+            business_analysis: leadData.businessAnalysis || leadData.business_analysis,
             opportunities: leadData.opportunities,
-            recommended_services: leadData.recommendedServices,
-            whatsapp_message: leadData.whatsappMessage,
-            message_generated_at: leadData.messageGeneratedAt,
-            message_edited_at: leadData.messageEditedAt,
-            outreach_status: leadData.outreachStatus || 'Not Contacted'
+            recommended_services: leadData.recommendedServices || leadData.recommended_services,
+            whatsapp_message: leadData.whatsappMessage || leadData.whatsapp_message,
+            message_generated_at: leadData.messageGeneratedAt || leadData.message_generated_at,
+            message_edited_at: leadData.messageEditedAt || leadData.message_edited_at,
+            outreach_status: leadData.outreachStatus || leadData.outreach_status || 'Not Contacted'
         }, { onConflict: 'place_id' })
         .select()
         .single();
