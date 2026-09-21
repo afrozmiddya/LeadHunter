@@ -34,7 +34,14 @@ export async function saveLead(leadData: any) {
             lead_score: leadData.leadScore,
             lead_priority: leadData.leadPriority,
             lead_reason: leadData.leadReason,
-            website_features: leadData.websiteFeatures
+            website_features: leadData.websiteFeatures,
+            business_analysis: leadData.businessAnalysis,
+            opportunities: leadData.opportunities,
+            recommended_services: leadData.recommendedServices,
+            whatsapp_message: leadData.whatsappMessage,
+            message_generated_at: leadData.messageGeneratedAt,
+            message_edited_at: leadData.messageEditedAt,
+            outreach_status: leadData.outreachStatus || 'Not Contacted'
         }, { onConflict: 'place_id' })
         .select()
         .single();
@@ -66,6 +73,27 @@ export async function getSavedLeads() {
     
     return data.map(item => ({
         ...item.businesses,
+        id: item.businesses.place_id,
+        displayName: { text: item.businesses.name },
+        primaryType: item.businesses.category,
+        rating: item.businesses.rating,
+        userRatingCount: item.businesses.review_count,
+        nationalPhoneNumber: item.businesses.phone,
+        websiteUri: item.businesses.website_url,
+        websiteStatus: item.businesses.website_status,
+        formattedAddress: item.businesses.address,
+        googleMapsUri: item.businesses.google_maps_url,
+        leadScore: item.businesses.lead_score,
+        leadPriority: item.businesses.lead_priority,
+        leadReason: item.businesses.lead_reason,
+        websiteFeatures: item.businesses.website_features,
+        businessAnalysis: item.businesses.business_analysis,
+        opportunities: item.businesses.opportunities,
+        recommendedServices: item.businesses.recommended_services,
+        whatsappMessage: item.businesses.whatsapp_message,
+        messageGeneratedAt: item.businesses.message_generated_at,
+        messageEditedAt: item.businesses.message_edited_at,
+        outreachStatus: item.businesses.outreach_status,
         saved_at: item.created_at,
         notes: item.notes
     }));

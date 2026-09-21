@@ -22,4 +22,13 @@ app.listen(PORT, () => {
     if (process.env.DEMO_MODE === 'true') {
         console.log('DEMO_MODE is ENABLED. Using mock data.');
     }
+    
+    const groqKey1 = !!process.env.GROQ_API_KEY_1;
+    const groqKey2 = !!process.env.GROQ_API_KEY_2;
+    console.log(`Groq Analysis API key configured: ${groqKey1}`);
+    console.log(`Groq WhatsApp API key configured: ${groqKey2}`);
+    
+    if (!groqKey1 || !groqKey2) {
+        console.error("STARTUP ERROR: Both GROQ_API_KEY_1 and GROQ_API_KEY_2 must be configured in .env");
+    }
 });

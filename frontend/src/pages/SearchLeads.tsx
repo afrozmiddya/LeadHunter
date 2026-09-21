@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Loader2, Download, Map as MapIcon, List, AlertCircle } from 'lucide-react';
 import { searchLeads, exportLeadsCsv } from '../lib/api';
 import LeadCard from '../components/LeadCard';
@@ -6,18 +6,44 @@ import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 
 const mapContainerStyle = { width: '100%', height: '600px', borderRadius: '0.75rem' };
 
+const SESSION_KEY = 'leadHunter_searchState';
+
 export default function SearchLeads() {
+  const getInitialState = () => {
+    try {
+      const saved = sessionStorage.getItem(SESSION_KEY);
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  };
+  const initialState = getInitialState();
+
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<any[]>(initialState?.results || []);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<'LIST'|'MAP'>('LIST');
+  const [view, setView] = useState<'LIST'|'MAP'>(initialState?.view || 'LIST');
   
-  const [location, setLocation] = useState('Kolkata');
-  const [category, setCategory] = useState('Restaurants');
-  const [minRating, setMinRating] = useState(4.3);
-  const [minReviews, setMinReviews] = useState(100);
-  const [maxResults, setMaxResults] = useState(25);
-  const [websiteFilter, setWebsiteFilter] = useState('NO_WEBSITE_DETECTED');
+  const [location, setLocation] = useState(initialState?.location || 'Kolkata');
+  const [category, setCategory] = useState(initialState?.category || 'Restaurants');
+  const [minRating, setMinRating] = useState(initialState?.minRating ?? 4.3);
+  const [minReviews, setMinReviews] = useState(initialState?.minReviews ?? 100);
+  const [maxResults, setMaxResults] = useState(initialState?.maxResults ?? 25);
+  const [websiteFilter, setWebsiteFilter] = useState(initialState?.websiteFilter || 'NO_WEBSITE_DETECTED');
+
+  useEffect(() => {
+    const stateToSave = {
+      results,
+      view,
+      location,
+      category,
+      minRating,
+      minReviews,
+      maxResults,
+      websiteFilter
+    };
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(stateToSave));
+  }, [results, view, location, category, minRating, minReviews, maxResults, websiteFilter]);
 
   const { isLoaded: isMapLoaded } = useJsApiLoader({
     id: 'google-map-script',

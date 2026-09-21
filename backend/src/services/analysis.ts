@@ -1,5 +1,3 @@
-import { analyzeLeadWithGemini } from './geminiService';
-
 export async function analyzeLead(place: any, category: string, websiteVerification: any) {
     const reviews = place.userRatingCount || 0;
     const rating = place.rating || 0;
@@ -38,19 +36,12 @@ export async function analyzeLead(place: any, category: string, websiteVerificat
 
     const why = `Strong local reputation with ${reviews}+ reviews and a ${rating} rating, but ${websiteVerification.status === 'NO_WEBSITE_DETECTED' ? 'no official website was detected' : 'website presence is unverified'}. A dedicated website could provide: ${features.join(', ')}.`;
 
-    const outreachAngle = `Hi, I noticed ${place.displayName?.text || 'your business'} has an incredible ${rating}-star rating on Google Maps. I build modern websites for local businesses and wanted to share a quick idea for how a dedicated site could help you capture even more customers. Open to seeing a quick concept?`;
-
-    const deterministic = {
+    return {
         leadScore: Math.round(score),
         leadPriority: priority,
         leadReason: why,
         websiteFeatures: features,
-        outreachAngle: outreachAngle,
         websiteStatus: websiteVerification.status,
         websiteVerification: websiteVerification
     };
-
-    // Enhance with Gemini AI if applicable
-    const enhanced = await analyzeLeadWithGemini(place, category, deterministic);
-    return { ...deterministic, ...enhanced };
 }

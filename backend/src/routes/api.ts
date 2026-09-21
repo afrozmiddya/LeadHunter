@@ -40,7 +40,7 @@ router.post('/search', async (req, res) => {
                     }
                 }
 
-                // Analyze and enhance with Gemini
+                // Analyze and enhance with Groq
                 const analysis = await analyzeLead(place, category, verification);
                 
                 leads.push({
@@ -128,6 +128,50 @@ router.post('/leads/export', (req, res) => {
         res.send(csv);
     } catch (error: any) {
         res.status(500).json({ error: 'Failed to export CSV' });
+    }
+});
+
+import { analyzeLeadBusiness, generateWhatsAppMessage } from '../services/aiService';
+
+router.post('/leads/:id/analyze', async (req, res) => {
+    try {
+        const { lead } = req.body;
+        if (!lead) return res.status(400).json({ error: 'Lead data required' });
+        
+        const analysis = await analyzeLeadBusiness(lead);
+        res.json({ analysis });
+    } catch (error: any) {
+        const status = error.status || 500;
+        const message = error.message || 'Failed to analyze business';
+        res.status(status).json({ error: message, details: error.details });
+    }
+});
+
+router.post('/leads/:id/whatsapp', async (req, res) => {
+    try {
+        const { lead, businessAnalysis } = req.body;
+        if (!lead || !businessAnalysis) return res.status(400).json({ error: 'Lead data and businessAnalysis required' });
+        
+        const result = await generateWhatsAppMessage(lead, businessAnalysis);
+        // generateWhatsAppMessage already returns { message: "..." }
+        res.json(result);
+    } catch (error: any) {
+        const status = error.status || 500;
+        const message = error.message || 'Personalized WhatsApp generation is temporarily unavailable.';
+        res.status(status).json({ error: message });
+    }
+});
+
+// Assuming frontend sends the full updated lead to /save or this specific endpoint
+router.put('/leads/:id/outreach-message', async (req, res) => {
+    try {
+        const { lead } = req.body;
+        if (!lead) return res.status(400).json({ error: 'Lead data required' });
+        
+        const saved = await saveLead(lead); // Upserts the lead with the new fields
+        res.json({ success: true, saved });
+    } catch (error: any) {
+        res.status(500).json({ error: 'Failed to save outreach message', details: error.message });
     }
 });
 
