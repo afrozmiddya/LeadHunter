@@ -7,12 +7,23 @@ export default {
   theme: {
     extend: {
       colors: {
+        background: 'var(--color-background)',
+        sidebar: 'var(--color-sidebar)',
+        surface: 'var(--color-surface)',
+        elevated: 'var(--color-elevated)',
+        border: 'var(--color-border)',
         primary: {
-          DEFAULT: '#4F46E5', // Indigo-600
-          foreground: '#FFFFFF',
+          DEFAULT: 'var(--color-primary)',
+          hover: 'var(--color-primary-hover)',
         },
-        background: '#F9FAFB', // Gray-50
-        card: '#FFFFFF',
+        success: 'var(--color-success)',
+        warning: 'var(--color-warning)',
+        danger: 'var(--color-danger)',
+        text: {
+          primary: 'var(--color-text-primary)',
+          secondary: 'var(--color-text-secondary)',
+          tertiary: 'var(--color-text-tertiary)',
+        }
       },
     },
   },
