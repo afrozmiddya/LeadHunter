@@ -1,32 +1,42 @@
-# React + TypeScript + Vite
+# LeadHunter (Frontend)
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Modern, high-converting B2B lead generation & outreach platform for web development agencies and freelancers. Searches Google Maps for high-opportunity businesses without websites, scores them, and generates tailored AI outreach messages.
 
-Currently, two official plugins are available:
+## Tech Stack
+- **Framework**: React 18, Vite, TypeScript
+- **Styling**: Tailwind CSS, PostCSS, Lucide Icons
+- **HTTP Client**: Axios
+- **Deployment**: Vercel
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Getting Started
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+### 1. Install Dependencies
+```bash
+npm install
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+### 2. Configure Environment
+Copy `.env.example` to `.env`:
+```bash
+cp .env.example .env
+```
+Set `VITE_API_BASE_URL` to point to your LeadHunter backend (e.g. `http://localhost:3001/api` for local or your deployed Render backend URL).
+
+### 3. Run Development Server
+```bash
+npm run dev
+```
+
+### 4. Build for Production
+```bash
+npm run build
+```
+
+## Vercel Deployment
+This repository is configured to deploy directly to Vercel:
+1. Import this repository into Vercel.
+2. Framework Preset: **Vite**
+3. Build Command: `npm run build`
+4. Output Directory: `dist`
+5. In **Environment Variables**, set:
+   - `VITE_API_BASE_URL`: URL to your live LeadHunter backend (e.g. `https://your-backend.onrender.com/api`).
