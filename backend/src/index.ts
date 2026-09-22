@@ -15,7 +15,11 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function(origin, callback) {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    if (
+      !origin ||
+      allowedOrigins.indexOf(origin) !== -1 ||
+      origin.endsWith('.vercel.app')
+    ) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -25,11 +29,28 @@ app.use(cors({
 }));
 app.use(express.json());
 
-app.use('/api', apiRoutes);
+// Root endpoint for status & health
+app.get('/', (req, res) => {
+    res.json({
+        name: 'LeadHunter Backend API',
+        status: 'online',
+        endpoints: {
+            health: '/api/health',
+            search: '/api/search',
+            savedLeads: '/api/leads/saved'
+        },
+        demo_mode: process.env.DEMO_MODE === 'true'
+    });
+});
 
-app.get('/api/health', (req, res) => {
+app.get(['/health', '/api/health'], (req, res) => {
     res.json({ status: 'ok', demo_mode: process.env.DEMO_MODE === 'true' });
 });
+
+// Mount routes on both /api and root / so any VITE_API_BASE_URL config works seamlessly
+app.use('/api', apiRoutes);
+app.use('/', apiRoutes);
+
 
 app.listen(PORT, () => {
     console.log(`LeadHunter Backend running on port ${PORT}`);
@@ -46,3 +67,5 @@ app.listen(PORT, () => {
         console.error("STARTUP ERROR: Both GROQ_API_KEY_1 and GROQ_API_KEY_2 must be configured in .env");
     }
 });
+
+export default app;
