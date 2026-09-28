@@ -1,5 +1,5 @@
-import { type ReactNode, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { type ReactNode, useState, useEffect } from 'react';
+import { Link, useLocation, Outlet } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Search, 
@@ -10,32 +10,54 @@ import {
   MessageSquare,
   Kanban,
   Clock,
-  Settings
+  Settings,
+  LogOut
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useAuth } from '../contexts/AuthContext';
 
 export function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
 }
 
-export default function Layout({ children }: { children: ReactNode }) {
+export default function AppLayout({ children }: { children?: ReactNode }) {
   const location = useLocation();
   const isActive = (path: string) => location.pathname === path;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { logout, user } = useAuth();
+
+  useEffect(() => {
+    // Add noindex to authenticated app pages
+    let metaRobots = document.querySelector('meta[name="robots"]');
+    if (!metaRobots) {
+      metaRobots = document.createElement('meta');
+      metaRobots.setAttribute('name', 'robots');
+      document.head.appendChild(metaRobots);
+    }
+    metaRobots.setAttribute('content', 'noindex, nofollow');
+
+    return () => {
+      // Remove when leaving app context
+      metaRobots?.remove();
+    };
+  }, []);
 
   const mainNav = [
-    { name: 'Overview', path: '/', icon: LayoutDashboard },
-    { name: 'Discover Leads', path: '/search', icon: Search },
-    { name: 'Leads', path: '/saved', icon: Bookmark },
-    { name: 'Outreach', path: '#outreach', icon: MessageSquare, disabled: true },
+    { name: 'Overview', path: '/app', icon: LayoutDashboard },
+    { name: 'Discover Leads', path: '/app/discover', icon: Search },
+    { name: 'Leads', path: '/app/leads', icon: Bookmark },
+    { name: 'Outreach', path: '/app/outreach', icon: MessageSquare, disabled: true },
   ];
 
   const secondaryNav = [
-    { name: 'Pipeline', path: '#pipeline', icon: Kanban, disabled: true },
-    { name: 'Follow-ups', path: '#followups', icon: Clock, disabled: true },
-    { name: 'Settings', path: '#settings', icon: Settings, disabled: true },
+    { name: 'Pipeline', path: '/app/pipeline', icon: Kanban, disabled: true },
+    { name: 'Follow-ups', path: '/app/followups', icon: Clock, disabled: true },
+    { name: 'Settings', path: '/app/settings', icon: Settings },
   ];
+
+  const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
+  const initial = displayName.charAt(0).toUpperCase();
 
   return (
     <div className="flex h-screen bg-background text-text-primary overflow-hidden">
@@ -122,23 +144,30 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
         
         {/* User profile area at bottom */}
-        <div className="p-4 border-t border-border/50">
-          <div className="flex items-center gap-3 px-2">
-            <div className="h-8 w-8 rounded-full bg-surface border border-border flex items-center justify-center text-sm font-medium text-text-secondary">
-              AM
+        <div className="p-4 border-t border-border/50 space-y-2">
+          <div className="flex items-center gap-3 px-2 truncate">
+            <div className="h-8 w-8 shrink-0 rounded-full bg-surface border border-border flex items-center justify-center text-sm font-medium text-text-secondary">
+              {initial}
             </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-medium text-text-primary">Afroz</span>
-              <span className="text-xs text-text-tertiary">Workspace Admin</span>
+            <div className="flex flex-col flex-1 min-w-0">
+              <span className="text-sm font-medium text-text-primary truncate">{displayName}</span>
+              <span className="text-xs text-text-tertiary truncate">{user?.email || 'Workspace Admin'}</span>
             </div>
           </div>
+          <button 
+            onClick={logout}
+            className="flex w-full items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-text-secondary hover:bg-surface hover:text-text-primary"
+          >
+            <LogOut className="h-4 w-4 text-text-tertiary" />
+            Log Out
+          </button>
         </div>
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto bg-background pt-16 md:pt-0">
         <div className="p-6 md:p-8 max-w-7xl mx-auto min-h-full">
-          {children}
+          {children || <Outlet />}
         </div>
       </main>
     </div>

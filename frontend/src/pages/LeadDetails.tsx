@@ -2,7 +2,7 @@ import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { Phone, MessageCircle, MapPin, Star, Copy, CheckCircle, Sparkles, RefreshCw, Edit2, Save, X, AlertCircle, Globe, Activity, LayoutDashboard, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { api } from '../lib/api';
-import { cn } from '../components/Layout';
+import { cn } from '../layouts/AppLayout';
 
 export default function LeadDetails() {
   const location = useLocation();
@@ -75,7 +75,7 @@ export default function LeadDetails() {
         <Activity className="h-12 w-12 text-text-tertiary mb-2" />
         <h2 className="text-xl font-bold text-text-primary">No lead data found</h2>
         <p className="text-text-secondary">Please return to search to find leads.</p>
-        <button onClick={() => navigate('/search')} className="mt-4 px-6 py-2 bg-primary text-white font-medium rounded-lg hover:bg-primary-hover">Go to Search</button>
+        <button onClick={() => navigate('/app/discover')} className="mt-4 px-6 py-2 bg-primary text-white font-medium rounded-lg hover:bg-primary-hover">Go to Search</button>
       </div>
     );
   }
@@ -227,7 +227,7 @@ export default function LeadDetails() {
 
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm font-medium text-text-tertiary">
-        <Link to="/saved" className="hover:text-text-primary transition-colors flex items-center gap-1"><LayoutDashboard className="h-4 w-4"/> Leads</Link>
+        <Link to="/app/leads" className="hover:text-text-primary transition-colors flex items-center gap-1"><LayoutDashboard className="h-4 w-4"/> Leads</Link>
         <ChevronRight className="h-4 w-4" />
         <span className="text-text-primary truncate">{name}</span>
       </div>
@@ -482,11 +482,11 @@ export default function LeadDetails() {
                <p className="text-sm text-text-secondary mt-1">Generate and refine your initial message.</p>
              </div>
              
-             <div className="flex items-center gap-3">
+             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
                 <select 
                    value={selectedTone} 
                    onChange={(e) => setSelectedTone(e.target.value)}
-                   className="bg-surface border border-border text-text-primary rounded-lg text-sm p-2.5 focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+                   className="w-full sm:w-auto bg-surface border border-border text-text-primary rounded-lg text-sm p-2.5 focus:ring-1 focus:ring-primary focus:border-primary outline-none"
                    disabled={isGenerating}
                 >
                    <option value="Friendly + Professional">Friendly + Professional</option>
@@ -500,7 +500,7 @@ export default function LeadDetails() {
                    <button 
                       onClick={() => generateMessage()} 
                       disabled={isGenerating}
-                      className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-hover disabled:opacity-50 flex items-center gap-2 transition-colors shadow-sm"
+                      className="w-full sm:w-auto bg-primary text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-primary-hover disabled:opacity-50 flex justify-center items-center gap-2 transition-colors shadow-sm"
                     >
                       {isGenerating ? <RefreshCw className="h-4 w-4 animate-spin" /> : <MessageCircle className="h-4 w-4" />}
                       {isGenerating ? 'Generating...' : 'Generate Message'}
@@ -567,14 +567,14 @@ export default function LeadDetails() {
           <button 
             onClick={handleCallClick} 
             disabled={!phone} 
-            className="flex justify-center items-center gap-2 px-6 py-3.5 bg-surface text-text-primary border border-border rounded-lg font-bold hover:bg-elevated transition-colors disabled:opacity-50"
+            className="w-full sm:w-auto flex justify-center items-center gap-2 px-6 py-3.5 bg-surface text-text-primary border border-border rounded-lg font-bold hover:bg-elevated transition-colors disabled:opacity-50"
           >
             <Phone className="h-5 w-5" /> Call Business
           </button>
           <button 
             onClick={handleWhatsAppClick} 
             disabled={!phone} 
-            className="flex justify-center items-center gap-2 px-6 py-3.5 bg-[#25D366] text-[#000000] rounded-lg font-bold hover:bg-[#20b858] transition-colors disabled:opacity-50 shadow-[0_0_15px_rgba(37,211,102,0.2)]"
+            className="w-full sm:w-auto flex justify-center items-center gap-2 px-6 py-3.5 bg-[#25D366] text-[#000000] rounded-lg font-bold hover:bg-[#20b858] transition-colors disabled:opacity-50 shadow-[0_0_15px_rgba(37,211,102,0.2)]"
           >
             <MessageCircle className="h-5 w-5" /> Open in WhatsApp
           </button>

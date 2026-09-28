@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Phone, MessageCircle, MapPin, Globe, Star, ArrowRight, CheckCircle } from 'lucide-react';
-import { cn } from './Layout';
+import { cn } from '../layouts/AppLayout';
 
 export default function LeadCard({ lead }: { lead: any }) {
   const name = lead.displayName?.text || 'Unknown Business';
@@ -48,17 +48,16 @@ export default function LeadCard({ lead }: { lead: any }) {
   return (
     <div className="bg-surface rounded-xl border border-border shadow-sm hover:border-primary/50 transition-colors flex flex-col group">
       <div className="p-5 flex-1">
-        <div className="flex justify-between items-start mb-3">
-          <div>
-            <h3 className="text-lg font-bold text-text-primary group-hover:text-primary transition-colors">{name}</h3>
-            <p className="text-sm text-text-secondary capitalize">{lead.primaryType?.replace(/_/g, ' ') || 'N/A'}</p>
-          </div>
-          
-          <div className="flex flex-col items-end gap-2 shrink-0 ml-4">
-            <div className={cn("px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-bold border", getPriorityColor())}>
-              {lead.leadPriority || lead.lead_priority || 'UNKNOWN'} PRIORITY
+        <div className="flex flex-col gap-2 mb-3">
+          <div className="flex justify-between items-start gap-3">
+            <h3 className="text-lg font-bold text-text-primary group-hover:text-primary transition-colors leading-tight break-words">{name}</h3>
+            <div className="shrink-0 mt-0.5">
+              <div className={cn("px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-bold border whitespace-nowrap", getPriorityColor())}>
+                {lead.leadPriority || lead.lead_priority || 'UNKNOWN'} PRIORITY
+              </div>
             </div>
           </div>
+          <p className="text-sm text-text-secondary capitalize">{lead.primaryType?.replace(/_/g, ' ') || 'N/A'}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 mb-4">
@@ -119,7 +118,7 @@ export default function LeadCard({ lead }: { lead: any }) {
         </div>
         
         <Link 
-          to={`/leads/${lead.id || lead.place_id}`} 
+          to={`/app/leads/${lead.id || lead.place_id}`} 
           state={{ lead }} 
           className="flex items-center gap-1.5 text-sm font-medium text-text-primary hover:text-primary transition-colors"
         >

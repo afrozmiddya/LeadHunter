@@ -1,9 +1,18 @@
 import axios from 'axios';
+import { supabase } from './supabase';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
+});
+
+api.interceptors.request.use(async (config) => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.access_token) {
+    config.headers.Authorization = `Bearer ${session.access_token}`;
+  }
+  return config;
 });
 
 export const searchLeads = async (params: any) => {
@@ -19,6 +28,21 @@ export const saveLead = async (id: string, leadData: any) => {
 export const getSavedLeads = async () => {
   const res = await api.get('/leads/saved');
   return res.data.results;
+};
+
+export const analyzeLeadBusiness = async (id: string, lead: any) => {
+  const res = await api.post(`/leads/${id}/analyze`, { lead });
+  return res.data.analysis;
+};
+
+export const generateWhatsApp = async (id: string, lead: any, businessAnalysis: any, tone: string) => {
+  const res = await api.post(`/leads/${id}/whatsapp`, { lead, businessAnalysis, tone });
+  return res.data;
+};
+
+export const updateOutreachMessage = async (id: string, lead: any) => {
+  const res = await api.put(`/leads/${id}/outreach-message`, { lead });
+  return res.data;
 };
 
 export const exportLeadsCsv = async (leads: any[]) => {

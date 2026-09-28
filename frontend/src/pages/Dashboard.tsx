@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Users, Activity, Clock, CheckCircle2, ChevronRight } from 'lucide-react';
 import { getSavedLeads } from '../lib/api';
-import { cn } from '../components/Layout';
+import { cn } from '../layouts/AppLayout';
 
 export default function Dashboard() {
   const [leads, setLeads] = useState<any[]>([]);
@@ -34,7 +34,7 @@ export default function Dashboard() {
           <p className="text-text-secondary mt-1">Here's what needs your attention today.</p>
         </div>
         <Link 
-          to="/search" 
+          to="/app/discover" 
           className="bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-lg font-medium transition-colors flex items-center gap-2 w-fit shadow-[0_0_15px_rgba(79,70,229,0.3)]"
         >
           <Search className="h-4 w-4" />
@@ -77,7 +77,7 @@ export default function Dashboard() {
               {needsAction.length > 0 ? (
                 <div className="divide-y divide-border">
                   {needsAction.slice(0, 4).map(lead => (
-                    <Link key={lead.id} to={`/leads/${lead.id}`} state={{ lead }} className="p-4 flex justify-between items-center hover:bg-elevated transition-colors group">
+                    <Link key={lead.id} to={`/app/leads/${lead.id}`} state={{ lead }} className="p-4 flex justify-between items-center hover:bg-elevated transition-colors group">
                       <div>
                         <h3 className="font-medium text-text-primary group-hover:text-primary transition-colors">{lead.displayName?.text || 'Unknown Business'}</h3>
                         <p className="text-sm text-text-secondary capitalize">{lead.primaryType?.replace(/_/g, ' ') || 'Local Business'}</p>
@@ -97,7 +97,7 @@ export default function Dashboard() {
               )}
             </div>
             {needsAction.length > 4 && (
-              <Link to="/saved" className="p-3 text-center text-sm font-medium text-primary bg-elevated/30 hover:bg-elevated border-t border-border transition-colors">
+              <Link to="/app/leads" className="p-3 text-center text-sm font-medium text-primary bg-elevated/30 hover:bg-elevated border-t border-border transition-colors">
                 View all {needsAction.length} leads
               </Link>
             )}
@@ -110,7 +110,7 @@ export default function Dashboard() {
             <div className="flex-1 overflow-auto">
               <div className="divide-y divide-border">
                 {recentLeads.map(lead => (
-                  <Link key={lead.id} to={`/leads/${lead.id}`} state={{ lead }} className="p-4 flex justify-between items-center hover:bg-elevated transition-colors group">
+                  <Link key={lead.id} to={`/app/leads/${lead.id}`} state={{ lead }} className="p-4 flex justify-between items-center hover:bg-elevated transition-colors group">
                     <div>
                       <h3 className="font-medium text-text-primary group-hover:text-primary transition-colors">{lead.displayName?.text || 'Unknown Business'}</h3>
                       <div className="flex items-center gap-2 mt-1">
@@ -128,7 +128,7 @@ export default function Dashboard() {
                 ))}
               </div>
             </div>
-            <Link to="/saved" className="p-3 text-center text-sm font-medium text-text-secondary hover:text-text-primary bg-elevated/30 hover:bg-elevated border-t border-border transition-colors">
+            <Link to="/app/leads" className="p-3 text-center text-sm font-medium text-text-secondary hover:text-text-primary bg-elevated/30 hover:bg-elevated border-t border-border transition-colors">
               View all leads
             </Link>
           </div>
@@ -140,7 +140,7 @@ export default function Dashboard() {
           </div>
           <h2 className="text-xl font-bold text-text-primary mb-2">No leads found</h2>
           <p className="text-text-secondary mb-6 max-w-md">Start discovering local businesses that need your services by searching Google Maps.</p>
-          <Link to="/search" className="bg-primary hover:bg-primary-hover text-white px-6 py-2.5 rounded-lg font-medium transition-colors flex items-center gap-2">
+          <Link to="/app/discover" className="bg-primary hover:bg-primary-hover text-white px-6 py-2.5 rounded-lg font-medium transition-colors flex items-center gap-2">
             <Search className="h-4 w-4" />
             Discover Leads
           </Link>

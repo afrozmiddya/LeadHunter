@@ -3,10 +3,11 @@ import { searchPlaces } from '../services/google';
 import { analyzeLead } from '../services/analysis';
 import { verifyWebsiteStatus } from '../services/websiteVerificationService';
 import { saveLead, getSavedLeads } from '../services/supabase';
+import { requireAuth } from '../middleware/auth';
 
 const router = Router();
 
-router.post('/search', async (req, res) => {
+router.post('/search', requireAuth, async (req, res) => {
     try {
         const { location, category, minRating = 4.3, minReviews = 100, maxResults = 25, websiteFilter = 'NO_WEBSITE_DETECTED' } = req.body;
         
@@ -59,7 +60,7 @@ router.post('/search', async (req, res) => {
     }
 });
 
-router.get('/leads/saved', async (req, res) => {
+router.get('/leads/saved', requireAuth, async (req, res) => {
     try {
         const leads = await getSavedLeads();
         res.json({ results: leads });
@@ -68,7 +69,7 @@ router.get('/leads/saved', async (req, res) => {
     }
 });
 
-router.post('/leads/:id/save', async (req, res) => {
+router.post('/leads/:id/save', requireAuth, async (req, res) => {
     try {
         const lead = req.body;
         const saved = await saveLead(lead);
@@ -78,7 +79,7 @@ router.post('/leads/:id/save', async (req, res) => {
     }
 });
 
-router.post('/leads/export', (req, res) => {
+router.post('/leads/export', requireAuth, (req, res) => {
     try {
         const { leads } = req.body;
         
@@ -133,7 +134,7 @@ router.post('/leads/export', (req, res) => {
 
 import { analyzeLeadBusiness, generateWhatsAppMessage } from '../services/aiService';
 
-router.post('/leads/:id/analyze', async (req, res) => {
+router.post('/leads/:id/analyze', requireAuth, async (req, res) => {
     try {
         const { lead } = req.body;
         if (!lead) return res.status(400).json({ error: 'Lead data required' });
@@ -147,7 +148,7 @@ router.post('/leads/:id/analyze', async (req, res) => {
     }
 });
 
-router.post('/leads/:id/whatsapp', async (req, res) => {
+router.post('/leads/:id/whatsapp', requireAuth, async (req, res) => {
     try {
         const { lead, businessAnalysis, tone } = req.body;
         if (!lead || !businessAnalysis) return res.status(400).json({ error: 'Lead data and businessAnalysis required' });
@@ -162,7 +163,7 @@ router.post('/leads/:id/whatsapp', async (req, res) => {
 });
 
 // Assuming frontend sends the full updated lead to /save or this specific endpoint
-router.put('/leads/:id/outreach-message', async (req, res) => {
+router.put('/leads/:id/outreach-message', requireAuth, async (req, res) => {
     try {
         const { lead } = req.body;
         if (!lead) return res.status(400).json({ error: 'Lead data required' });

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { getSavedLeads } from '../lib/api';
 import LeadCard from '../components/LeadCard';
 import { Loader2, Search, Inbox } from 'lucide-react';
-import { cn } from '../components/Layout';
+import { cn } from '../layouts/AppLayout';
 
 const TABS = [
   { id: 'all', label: 'All Leads' },
