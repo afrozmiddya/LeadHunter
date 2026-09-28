@@ -3,7 +3,7 @@ import { Search, Loader2, Download, Map as MapIcon, List, AlertCircle, SlidersHo
 import { searchLeads, exportLeadsCsv } from '../lib/api';
 import LeadCard from '../components/LeadCard';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
-import { cn } from '../components/Layout';
+import { cn } from '../layouts/AppLayout';
 
 const mapContainerStyle = { width: '100%', height: '100%', borderRadius: '0.75rem' };
 
